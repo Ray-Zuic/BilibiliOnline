@@ -15,7 +15,7 @@ def getBvList(url):
     data_info = {}
     data_info['time'] = datetime.datetime.now().strftime('%Y-%m-%d')
     data_info['data'] = json.loads(data.text)['data']
-    del data_info['data']['list'][11: -1]
+    del data_info['data']['list'][10: -1]
 
     with open('bvlist.json', 'w', encoding='utf-8') as f2:
         json.dump(data_info, f2, ensure_ascii=False, indent=2)
@@ -35,8 +35,16 @@ def get_online(url, vlist):
         r = requests.get(url, timeout=30, headers=headers, params=ids)
         r.raise_for_status()
         r.endcodding = 'utf-8'
-        vinfo[i] = r.text
+        vinfo[i] = {}
+        vinfo[i]['title'] = video['title']
+        vinfo[i]['aid'] = video['aid']
+        vinfo[i]['cid'] = video['cid']
+        vinfo[i]['bvid'] = video['bvid']
+        vinfo[i]['owner'] = video['owner']['name']
+        vinfo[i]['data'] = json.loads(r.text)
         i = i + 1
+    with open('online.json', 'w', encoding='utf-8') as f2:
+        json.dump(vinfo, f2, ensure_ascii=False, indent=2)
     return vinfo
 
 
