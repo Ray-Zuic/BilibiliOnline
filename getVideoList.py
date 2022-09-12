@@ -1,7 +1,14 @@
 import datetime
 import json
+import time
 
 import requests
+
+import schedule1
+
+
+def sleeptime(hour, min, sec):
+    return hour * 3600 + min * 60 + sec
 
 
 def getBvList(url):
@@ -17,7 +24,7 @@ def getBvList(url):
     data_info['data'] = json.loads(data.text)['data']
     del data_info['data']['list'][10: -1]
 
-    with open('bvlist.json', 'w', encoding='utf-8') as f2:
+    with open('bvlist.json', 'a', encoding='utf-8') as f2:
         json.dump(data_info, f2, ensure_ascii=False, indent=2)
     return data_info
 
@@ -29,30 +36,50 @@ def get_online(url, vlist):
     }  # 爬虫模拟访问信息
     vinfo = {}
     i = 1
+
     for video in vlist['data']['list']:
         # ids = {'aid': "260132618", 'cid': "822823845", 'bvid': "BV1ie411g72J"}
         ids = {'aid': video['aid'], 'cid': video['cid'], 'bvid': video['bvid']}
         r = requests.get(url, timeout=30, headers=headers, params=ids)
         r.raise_for_status()
         r.endcodding = 'utf-8'
-        vinfo[i] = {}
-        vinfo[i]['title'] = video['title']
-        vinfo[i]['aid'] = video['aid']
-        vinfo[i]['cid'] = video['cid']
-        vinfo[i]['bvid'] = video['bvid']
-        vinfo[i]['owner'] = video['owner']['name']
-        vinfo[i]['data'] = json.loads(r.text)
-        i = i + 1
-    with open('online.json', 'w', encoding='utf-8') as f2:
+        try:
+            vinfo[i] = {}
+            vinfo[i]['time'] = datetime.datetime.now().strftime('%Y-%m-%d')
+            vinfo[i]['title'] = video['title']
+            vinfo[i]['aid'] = video['aid']
+            vinfo[i]['cid'] = video['cid']
+            vinfo[i]['bvid'] = video['bvid']
+            vinfo[i]['owner'] = video['owner']['name']
+            vinfo[i]['count'] = json.loads(r.text)['data']['count']
+            vinfo[i]['log'] = 'success'
+            i = i + 1
+        except(TypeError):
+            vinfo[i]['log'] = 'TypeError'
+    with open('online.json', 'a', encoding='utf-8') as f2:
         json.dump(vinfo, f2, ensure_ascii=False, indent=2)
+
     return vinfo
 
 
-if __name__ == '__main__':
+def job():
     # 热榜前十
     url_10 = "https://api.bilibili.com/x/web-interface/popular?ps=20&pn=1"
     # 同时在线人数
     url_online = "https://api.bilibili.com/x/player/online/total"
+    # 整个mian是每天9点执行一次
+    # 其中的同时在线人数是没5分钟更新一次
     vlist = getBvList(url_10)
-    vinfo = get_online(url_online, vlist)
-    print(vinfo)
+    second = sleeptime(0, 1, 0)
+    row = 1
+    while 1 == 1:
+        vinfo = get_online(url_online, vlist)
+        print("时间：" + datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S') + "已收集同时在线人数")
+        time.sleep(second)
+
+
+if __name__ == '__main__':
+    schedule1.every().day.at("11:05").do(job)  # 部署在每天的10:30执行job()函数的任务
+    while True:
+        schedule1.run_pending()
+        time.sleep(1)
