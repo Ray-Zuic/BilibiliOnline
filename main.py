@@ -13,6 +13,7 @@ def getBvList(url):
     headers = {
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+        'Connection': 'close'
     }  # 爬虫模拟访问信息
     data = requests.get(url=url, headers=headers)
 
@@ -31,6 +32,7 @@ def get_online(url, vlist):
     headers = {
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36',
+        'Connection': 'close'
     }  # 爬虫模拟访问信息
     vinfo = {}
     i = 1
@@ -66,13 +68,23 @@ def job():
     url_online = "https://api.bilibili.com/x/player/online/total"
     # 整个mian是每天9点执行一次
     # 其中的同时在线人数是没5分钟更新一次
-    vlist = getBvList(url_10)
-    second = sleeptime(0, 5, 0)
-    row = 1
+    mint = sleeptime(0, 1, 0)
     while 1 == 1:
-        vinfo = get_online(url_online, vlist)
-        print("时间：" + datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S') + "已收集同时在线人数")
-        time.sleep(second)
+        try:
+            vlist = getBvList(url_10)
+        except:
+            print("获取视频列表失败，1分钟后重试")
+            time.sleep(mint)
+            continue
+        second = sleeptime(0, 5, 0)
+        row = 1
+        while 1 == 1:
+            try:
+                vinfo = get_online(url_online, vlist)
+                print("时间：" + datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S') + "已收集同时在线人数")
+            except:
+                print("获取同时在线人数失败，5分钟后重试")
+            time.sleep(second)
 
 
 if __name__ == '__main__':
